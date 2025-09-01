@@ -25,11 +25,11 @@ def login_user(email, password):
     except requests.exceptions.RequestException:
         return False, "Connection error. Make sure the API is running."
 
-def register_user(email, password):
+def register_user(email, password, name):
     try:
         response = requests.post(
             f"{API_BASE_URL}/register",
-            json={"email": email, "password": password}
+            json={"email": email, "password": password, "name": name}
         )
         if response.status_code == 200:
             return True, "Registration successful! Please login."

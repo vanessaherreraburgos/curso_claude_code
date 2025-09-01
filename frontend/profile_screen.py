@@ -19,6 +19,7 @@ def profile_screen():
     profile_data = get_user_profile()
     if profile_data:
         st.subheader("Profile Information")
+        st.write(f"**Name:** {profile_data.get('name', 'Not provided')}")
         st.write(f"**Email:** {profile_data['email']}")
         st.write(f"**User ID:** {profile_data['id']}")
     else:

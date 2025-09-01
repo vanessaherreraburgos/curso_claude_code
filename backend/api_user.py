@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
@@ -20,11 +20,17 @@ DB_FILE = "../db/db.json"
 
 class User(BaseModel):
     email: EmailStr
+    password: str = Field(..., min_length=5, description="Password must be at least 5 characters long")
+    name: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
     password: str
 
 class UserResponse(BaseModel):
     id: str
     email: str
+    name: str
 
 class Token(BaseModel):
     access_token: str
@@ -73,13 +79,14 @@ def register(user: User):
     db["users"][user_id] = {
         "id": user_id,
         "email": user.email,
-        "password": get_password_hash(user.password)
+        "password": get_password_hash(user.password),
+        "name": user.name
     }
     save_db(db)
-    return UserResponse(id=user_id, email=user.email)
+    return UserResponse(id=user_id, email=user.email, name=user.name)
 
 @router.post("/login", response_model=Token)
-def login(user: User):
+def login(user: UserLogin):
     db = load_db()
     user_data = next((u for u in db["users"].values() if u["email"] == user.email), None)
     if not user_data or not verify_password(user.password, user_data["password"]):
@@ -94,4 +101,4 @@ def get_profile(current_user_email: str = Depends(verify_token)):
     user_data = next((u for u in db["users"].values() if u["email"] == current_user_email), None)
     if not user_data:
         raise HTTPException(status_code=404, detail="User not found")
-    return UserResponse(id=user_data["id"], email=user_data["email"])
+    return UserResponse(id=user_data["id"], email=user_data["email"], name=user_data.get("name", ""))
